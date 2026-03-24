@@ -10,11 +10,11 @@ load_dotenv()
 pinecone_client = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
 index = pinecone_client.Index(os.getenv("PINECONE_INDEX_NAME"))
 
-def store_in_pinecone(chunks: List[str], embeddings: List[List[float]], namespace: str = ""):
+def store_in_pinecone(chunks: List[str], embeddings: List[List[float]], namespace: str = "", source: str = "doc"):
     vectors_to_upsert = []
     for i, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
         vector_data = {
-            "id": f"chunk_{i}",
+            "id": f"{source}_chunk_{i}",
             "values": embedding,
             "metadata": {
                 "text": chunk,

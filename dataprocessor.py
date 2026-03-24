@@ -1,21 +1,25 @@
+import os
 from pdfreader import read_pdf
 from chunker import chunk_pages
 from embedder import embed_chunks
 from vectorstore import store_in_pinecone
-from typing import List
+import glob
 
-pdf_path = "./resources/HRPolicy.pdf"
 def run():
-    # Read HR Policy PDF and extract text
-    pages = read_pdf(pdf_path)
+    pdf_files = glob.glob("./resources/*.pdf")
 
-    # Chunk the extracted text into manageable pieces
-    chunks = chunk_pages(pages, chunk_size=900, chunk_overlap=150)
+    if not pdf_files:
+        print("No PDF files found in ./resources/")
+        return
 
-    embedded_chunks = embed_chunks(chunks)
-    
-    store_in_pinecone(chunks, embedded_chunks, namespace="")
-   
-    
+    for pdf_path in pdf_files:
+        print(f"Processing: {pdf_path}")
+        source = os.path.splitext(os.path.basename(pdf_path))[0]
+        pages = read_pdf(pdf_path)
+        chunks = chunk_pages(pages, chunk_size=900, chunk_overlap=150)
+        embedded_chunks = embed_chunks(chunks)
+        store_in_pinecone(chunks, embedded_chunks, namespace="", source=source)
+        print(f"Done: {pdf_path} — {len(chunks)} chunks")
+
 if __name__ == "__main__":
     run()
