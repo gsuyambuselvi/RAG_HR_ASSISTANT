@@ -11,6 +11,13 @@ if "messages" not in st.session_state:
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
+        if message.get("scores"):
+            with st.expander("Eval Scores", expanded=False):
+                scores = message["scores"]
+                col1, col2, col3 = st.columns(3)
+                col1.metric("Faithfulness", f"{scores['faithfulness']:.0%}")
+                col2.metric("Answer Relevancy", f"{scores['answer_relevancy']:.0%}")
+                col3.metric("Context Relevancy", f"{scores['context_relevancy']:.0%}")
 
 if prompt := st.chat_input("Ask a question about HR policy..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
@@ -19,7 +26,22 @@ if prompt := st.chat_input("Ask a question about HR policy..."):
 
     with st.chat_message("assistant"):
         with st.spinner("Thinking..."):
-            response = process_user_query(prompt)
-        st.markdown(response)
+            result = process_user_query(prompt)
 
-    st.session_state.messages.append({"role": "assistant", "content": response})
+        if result["blocked"]:
+            st.warning(result["answer"])
+        else:
+            st.markdown(result["answer"])
+            if result["scores"]:
+                with st.expander("Eval Scores", expanded=False):
+                    scores = result["scores"]
+                    col1, col2, col3 = st.columns(3)
+                    col1.metric("Faithfulness", f"{scores['faithfulness']:.0%}")
+                    col2.metric("Answer Relevancy", f"{scores['answer_relevancy']:.0%}")
+                    col3.metric("Context Relevancy", f"{scores['context_relevancy']:.0%}")
+
+    st.session_state.messages.append({
+        "role": "assistant",
+        "content": result["answer"],
+        "scores": result["scores"] if not result["blocked"] else None
+    })
